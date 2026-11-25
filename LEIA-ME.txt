@@ -1,0 +1,27 @@
+SmartPark RFID - Modelo 3D e enciclopedia (versao offline)
+==========================================================
+
+COMO ABRIR
+1. Descompacte o arquivo .zip numa pasta qualquer.
+2. De dois cliques em "index.html".
+   Abra no Google Chrome, Microsoft Edge ou Firefox atualizados.
+
+Nao precisa de internet, servidor nem instalacao: o motor 3D (Three.js)
+esta na pasta "lib" e as fontes na pasta "fonts".
+Mantenha index.html, lib e fonts juntos na mesma pasta.
+
+DICAS PARA A FEIRA
+- Tecla F11 deixa o navegador em tela cheia.
+- Botao vermelho: reproduz o ciclo completo (cerca de 40 s).
+  Botao do meio: avanca um passo por vez, para ir explicando.
+- Arraste para girar a cena, use a roda do mouse para zoom e
+  clique num componente para ver as ligacoes dele.
+- Se a cena aparecer preta, ative "Usar aceleracao grafica" nas
+  configuracoes do navegador e reabra a pagina.
+
+CONTEUDO
+index.html          pagina com a simulacao 3D e a enciclopedia
+lib/three.min.js    Three.js r128 (licenca MIT)
+lib/OrbitControls.js controle de camera do Three.js (licenca MIT)
+fonts/              IBM Plex Sans, IBM Plex Sans Condensed, IBM Plex Mono
+                    e Source Serif 4 (licenca SIL Open Font License)
