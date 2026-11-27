@@ -1,242 +1,406 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="dark">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SmartPark RFID</title>
-<link href="fonts/fonts.css" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SmartPark RFID · Simulação 3D</title>
+<meta name="theme-color" content="#061227">
+<script>try{document.documentElement.dataset.theme=localStorage.getItem('smartpark-tema')==='light'?'light':'dark'}catch(e){}</script>
+<link href="fonts/overpass.css" rel="stylesheet">
 <style>
-/* VOICE: sóbrio e técnico, como o material de uma bancada de engenharia; frases curtas, nada de enfeite.
-   IDEA: a maquete como modelo arquitetônico num estúdio escuro, com painel de instrumentos embaixo e um verbete de enciclopédia em seguida.
-   PICTURE: o palco 3D em tela larga, com a legenda do passo e os controles sobre a cena.
-   COLOUR and TYPE: grafite e branco-concreto, um único acento vermelho-cancela; IBM Plex Sans para a interface, Source Serif 4 para o verbete.
-   LAYOUT: barra fina de navegação, título, palco, faixa de linha do tempo + telemetria + serial, verbete em duas colunas com sumário e quadro-resumo. */
-:root{color-scheme:light dark;
-  --bg:light-dark(#f3f4f5,#0b0c0e);--paper:light-dark(#ffffff,#111316);--ink:light-dark(#101214,#e8eaed);
-  --muted:light-dark(#5b6169,#959ca6);--rule:light-dark(#dadde1,#25282d);--soft:light-dark(#f7f8f9,#15171a);
-  --accent:#e5482d;--ok:#2f9e6a;--sans:"IBM Plex Sans",system-ui,sans-serif;--cond:"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif;
-  --serif:"Source Serif 4",Georgia,serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace}
-:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+/* SmartPark RFID — azul e branco, com modo escuro como padrão
+   IDEIA: a linguagem das placas de estacionamento. Placa azul com filete branco por dentro,
+   letra de sinalização (Overpass, derivada da Highway Gothic).
+   A placa aparece em poucos lugares: marca, passo atual da simulação e quadro-resumo.
+   MODO ESCURO (padrão): azul-noite, como o pátio iluminado à noite; a placa azul continua igual.
+   MODO CLARO: branco e azul-névoa.
+   TELAS: computador = palco 3D + coluna de controle ao lado;
+          celular   = palco em tela quase cheia + painel do passo preso no rodapé enquanto a cena está visível. */
+:root{
+  --plate:#0B4EA2;--ok:#1E8A5A;
+  --bg:#fff;--surface:#fff;--surface-2:#F2F6FC;--surface-3:#E6EEF9;--line:#D6E2F2;
+  --ink:#0A1F3D;--muted:#4A5D78;--accent:#0B4EA2;--accent-2:#083B7C;--btn:#0B4EA2;--btn-h:#083B7C;
+  --header:rgba(255,255,255,.95);--glass:rgba(255,255,255,.88);--wiki:#F2F6FC;--log:#0A1F3D;--code:#083B7C;
+  --shadow:rgba(10,31,61,.22);--ring:rgba(11,78,162,.14);
+  --stage:radial-gradient(90% 70% at 50% 18%,#FFFFFF 0%,#EEF4FC 45%,#D9E6F7 100%);
+  --f:"Overpass",system-ui,"Segoe UI",sans-serif;--mono:"Overpass Mono",ui-monospace,Consolas,monospace;
+  --r-lg:22px;--r-md:14px;--r-sm:10px;--ease:cubic-bezier(.2,.7,.2,1);--hdr:68px;
+  color-scheme:light}
+:root[data-theme=dark]{
+  --ok:#3DCB8A;
+  --bg:#061227;--surface:#0B1B36;--surface-2:#102446;--surface-3:#163058;--line:#1F3A66;
+  --ink:#E8F0FC;--muted:#9CB1D1;--accent:#7FB2FF;--accent-2:#B5D2FF;--btn:#1F62D3;--btn-h:#2C74EC;
+  --header:rgba(6,18,39,.95);--glass:rgba(11,27,54,.84);--wiki:#081730;--log:#040C1C;--code:#B5D2FF;
+  --shadow:rgba(0,0,0,.5);--ring:rgba(127,178,255,.18);
+  --stage:radial-gradient(90% 75% at 50% 15%,#1D3B6E 0%,#0E2347 48%,#071530 100%);
+  color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
-html{scroll-behavior:smooth;scroll-padding-top:72px}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--sans);overflow-x:clip;-webkit-font-smoothing:antialiased}
-a{color:inherit}
-.wrap{max-width:1280px;margin:0 auto;padding:0 max(4vw,16px)}
-button{font:500 14px/1 var(--sans);color:inherit;cursor:pointer}
-button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+html{scroll-behavior:smooth;scroll-padding-top:calc(var(--hdr) + 16px);background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.6 var(--f);overflow-x:clip;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+a{color:var(--accent)}
+.wrap{max-width:1360px;margin:0 auto;padding:0 max(4vw,18px)}
+button{font:600 15px/1 var(--f);color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px;border-radius:6px}
+svg{flex:none}
+@media (prefers-reduced-motion:no-preference){.theming,.theming *,.theming *::before,.theming *::after{transition:background-color .4s,color .4s,border-color .4s,box-shadow .4s!important}}
 
-/* barra superior */
-.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--rule)}
-.top .wrap{display:flex;align-items:center;justify-content:space-between;height:58px;gap:16px}
-.brand{display:flex;align-items:center;gap:10px;font:600 17px/1 var(--sans);text-decoration:none;white-space:nowrap}
-.brand svg{flex:none}
-.nav{display:flex;gap:4px}
-.nav a{text-decoration:none;font-size:14.5px;color:var(--muted);padding:10px 12px;border-radius:6px}
-.nav a:hover{color:var(--ink)}
+/* ---------- barra superior ---------- */
+.top{position:sticky;top:0;z-index:30;background:var(--header);backdrop-filter:saturate(1.4) blur(12px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;height:var(--hdr);gap:16px}
+.brand{display:flex;align-items:center;gap:12px;font:780 19px/1 var(--f);letter-spacing:-.01em;color:var(--ink);text-decoration:none;white-space:nowrap}
+.brand span{padding-top:3px}
+.right{display:flex;align-items:center;gap:8px}
+.nav{display:flex;gap:2px}
+.nav a{position:relative;text-decoration:none;font-size:15px;font-weight:600;color:var(--muted);padding:10px 14px;border-radius:var(--r-sm);transition:color .2s,background-color .2s}
+.nav a:hover{color:var(--accent);background:var(--surface-2)}
+.nav a[aria-current=true]{color:var(--accent)}
+.nav a[aria-current=true]::after{content:"";position:absolute;left:14px;right:14px;bottom:2px;height:2px;border-radius:2px;background:currentColor}
+.theme{width:42px;height:42px;display:grid;place-items:center;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:0;transition:border-color .2s,color .2s,background-color .2s}
+.theme:hover{border-color:var(--accent);color:var(--accent)}
+.theme svg{width:20px;height:20px}
+[data-theme=dark] .theme .moon,[data-theme=light] .theme .sun{display:none}
 
-/* título da simulação */
-.intro{padding:clamp(28px,4vw,52px) 0 22px;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:12px 48px;align-items:end}
-h1{font:600 clamp(32px,4.6vw,52px)/1.05 var(--cond);letter-spacing:-.01em;margin:0;text-wrap:balance}
-.intro p{margin:0;color:var(--muted);max-width:52ch}
-@media(max-width:820px){.intro{grid-template-columns:minmax(0,1fr)}}
+/* ---------- abertura ---------- */
+.intro{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:24px 56px;align-items:end;padding:clamp(28px,3.6vw,48px) 0 clamp(22px,2.6vw,32px)}
+h1{font:820 clamp(34px,4.8vw,62px)/.98 var(--f);letter-spacing:-.025em;margin:0;text-wrap:balance}
+.lead{margin:0 0 18px;font-size:18px;line-height:1.55;color:var(--muted);max-width:52ch}
+.hints{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.hints li{flex:none;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--accent-2);background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:7px 14px 6px 10px;white-space:nowrap}
+.hints svg{width:18px;height:18px;color:var(--accent);margin-top:-2px}
+.coarse{display:none}
+@media (pointer:coarse){.coarse{display:inline}.fine{display:none}}
 
-/* palco */
-.stage{position:relative;aspect-ratio:16/9;min-height:460px;border-radius:8px;overflow:hidden;color:#eef0f3;
-  background:radial-gradient(120% 90% at 50% 30%,#2a2e34 0%,#16181c 55%,#0c0d0f 100%);touch-action:none}
+/* ---------- simulação ---------- */
+.sim{display:grid;grid-template-columns:minmax(0,1fr) 384px;grid-template-rows:auto minmax(0,1fr);gap:14px;align-items:start}
+.stage{grid-row:1/3;align-self:stretch;position:relative;min-height:clamp(560px,calc(100vh - var(--hdr) - 60px),780px);border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--line);background:var(--stage);touch-action:none}
 .stage canvas{position:absolute;inset:0;width:100%!important;height:100%!important;display:block;cursor:grab}
 .stage canvas:active{cursor:grabbing}
-.hud{position:absolute;left:0;right:0;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:14px;pointer-events:none;z-index:3}
+.hud{position:absolute;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;padding:14px;pointer-events:none;z-index:3}
 .hud>*{pointer-events:auto}
-.hud.t{top:0}.hud.b{bottom:0;align-items:flex-end;padding:20px;background:linear-gradient(transparent,rgba(8,9,11,.78) 70%)}
-.seg{display:flex;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:3px;backdrop-filter:blur(8px)}
-.seg button{background:none;border:0;color:#b9bec6;min-height:36px;padding:0 12px;border-radius:6px}
-.seg button[aria-pressed=true]{background:rgba(255,255,255,.14);color:#fff}
-.seg button:hover{color:#fff}
-.caption{max-width:min(560px,62%)}
-.caption .k{font-size:13px;color:#aab0b8;margin:0 0 4px}
-.caption .k b{color:var(--accent);font-weight:600}
-.caption h2{font:600 clamp(22px,2.4vw,28px)/1.15 var(--cond);margin:0 0 6px;color:#fff}
-.caption p{margin:0;font-size:15px;line-height:1.45;color:#c9cdd3}
-.transport{display:flex;gap:8px;align-items:center;flex:none}
-.ic{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#fff;padding:0}
-.ic:hover{background:rgba(255,255,255,.16)}
-.ic.main{width:56px;height:56px;background:var(--accent);border-color:var(--accent)}
-.ic.main:hover{background:#f05b40}
-.ic:disabled{opacity:.35;cursor:default}
-.ic svg{width:20px;height:20px}
-.lbl3d{position:absolute;left:0;top:0;z-index:2;display:flex;align-items:center;gap:6px;font:500 12px/1 var(--sans);color:#f2f4f6;white-space:nowrap;pointer-events:none;background:rgba(12,13,15,.74);padding:5px 8px 5px 6px;border-radius:4px;transition:opacity .2s}
-.lbl3d::before{content:"";width:5px;height:5px;border-radius:50%;background:#e5482d}
-.sheet{position:absolute;right:14px;top:66px;z-index:4;width:min(340px,calc(100% - 28px));max-height:calc(100% - 180px);overflow:auto;background:rgba(17,19,22,.82);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:16px 18px;color:#e9ecef}
+.seg{display:flex;align-items:center;background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:12px;padding:4px;box-shadow:0 1px 2px var(--shadow)}
+.seg b{font-size:12.5px;font-weight:600;color:var(--muted);padding:2px 8px 0 8px}
+.seg button{background:none;border:0;color:var(--muted);min-height:36px;padding:2px 12px 0;border-radius:9px;font-size:14px;white-space:nowrap;transition:background-color .22s var(--ease),color .22s}
+.seg button:hover{color:var(--accent)}
+.seg button[aria-pressed=true]{background:var(--btn);color:#fff}
+.lbl3d{position:absolute;left:0;top:0;z-index:2;display:flex;align-items:center;gap:7px;font:650 12.5px/1 var(--f);color:var(--ink);white-space:nowrap;pointer-events:none;
+  background:var(--glass);border:1px solid var(--line);padding:6px 10px 4px 8px;border-radius:999px;box-shadow:0 2px 6px var(--shadow);transition:opacity .25s}
+.lbl3d::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent);margin-top:-2px}
+.sheet{position:absolute;right:14px;top:72px;z-index:4;width:min(340px,calc(100% - 28px));max-height:calc(100% - 92px);overflow:auto;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--r-md);padding:18px 18px 12px;box-shadow:0 18px 40px -12px var(--shadow)}
+.sheet:not([hidden]){animation:sheetIn .28s var(--ease)}
 .sheet[hidden]{display:none}
-.sheet h3{margin:0 36px 4px 0;font:600 19px/1.2 var(--cond)}
-.sheet p{margin:0 0 10px;color:#b7bcc4;font-size:14px}
+@keyframes sheetIn{from{opacity:0;transform:translateY(-6px) scale(.985)}}
+.sheet h3{margin:0 40px 6px 0;font:780 19px/1.2 var(--f)}
+.sheet p{margin:0 0 12px;color:var(--muted);font-size:14.5px;line-height:1.5}
 .sheet table{width:100%;border-collapse:collapse;font-size:13.5px}
-.sheet td{padding:6px 0;border-top:1px solid rgba(255,255,255,.1);vertical-align:top}
-.sheet td:nth-child(2){font-family:var(--mono);color:#fff;padding:6px 10px;white-space:nowrap}
-.sheet td:last-child{color:#9aa1aa}
-.sheet .x{position:absolute;right:8px;top:8px;width:36px;height:36px;border:0;background:none;color:#fff;font-size:20px;border-radius:6px}
-.fail{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:#cfd3d8}
+.sheet td{padding:7px 0 5px;border-top:1px solid var(--line);vertical-align:top}
+.sheet td:nth-child(2){font-family:var(--mono);font-weight:600;color:var(--accent);padding:7px 10px 5px;white-space:nowrap}
+.sheet td:last-child{color:var(--muted)}
+.sheet .x{position:absolute;right:8px;top:8px;width:36px;height:36px;border:0;background:none;color:var(--muted);font-size:22px;border-radius:9px;transition:background-color .2s}
+.sheet .x:hover{background:var(--surface-2);color:var(--ink)}
+.fail{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:var(--muted)}
 
-/* faixa de instrumentos */
-.strip{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:0 40px;padding:22px 0 8px}
-.timeline{grid-column:1/-1;list-style:none;margin:0 0 22px;padding:0;display:grid;grid-template-columns:repeat(7,minmax(118px,1fr));gap:10px;overflow-x:auto}
-.timeline li{border-top:3px solid var(--rule);padding-top:10px;font-size:13.5px;line-height:1.3;color:var(--muted)}
-.timeline li span{display:block;font-size:12px;margin-bottom:3px}
-.timeline li.done{border-color:var(--ink);color:var(--ink)}
-.timeline li.now{border-color:var(--accent);color:var(--ink)}
-.timeline li.now span{color:var(--accent)}
-.tele{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0;border-top:1px solid var(--rule);align-self:start}
-.tele div{padding:12px 12px 12px 0;border-bottom:1px solid var(--rule)}
-.tele div+div{padding-left:14px}
-.tele div:nth-child(3n+1){padding-left:0}
-.tele div:not(:nth-child(3n+1)){border-left:1px solid var(--rule)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px}
+.dock{display:grid;gap:12px}
+.panel{display:grid;gap:14px}
+/* a placa: azul com filete branco interno, igual nos dois temas */
+.plate{position:relative;background:var(--plate);color:#fff;border-radius:var(--r-md);padding:20px 20px 18px;box-shadow:inset 0 0 0 4px var(--plate),inset 0 0 0 5.5px rgba(255,255,255,.9)}
+.plate .k{margin:0 0 8px;font-size:14px;font-weight:500;color:#CFE0F7}
+.plate .k b{color:#fff;font-weight:750}
+.plate h2{font:800 27px/1.08 var(--f);letter-spacing:-.015em;margin:0 0 8px;text-wrap:balance}
+.plate p{margin:0;font-size:15px;line-height:1.5;color:#E3EDFB}
+.plate .txt.swap{animation:swap .42s var(--ease)}
+@keyframes swap{from{opacity:0;transform:translateY(6px)}}
+.prog{height:4px;border-radius:4px;background:rgba(255,255,255,.22);margin-top:16px;overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:#fff;border-radius:4px;transition:width .6s var(--ease)}
+.transport{display:grid;grid-template-columns:50px minmax(0,1fr) minmax(0,1.15fr);gap:8px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:50px;padding:3px 14px 0;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);white-space:nowrap;
+  transition:background-color .2s,border-color .2s,color .2s,transform .12s}
+.btn svg{width:18px;height:18px;margin-top:-3px}
+.btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.btn:active:not(:disabled){transform:scale(.98)}
+.btn.icon{padding:0}
+.btn.icon svg{margin:0}
+.btn.main{background:var(--btn);border-color:var(--btn);color:#fff}
+.btn.main:hover:not(:disabled){background:var(--btn-h);border-color:var(--btn-h);color:#fff}
+.btn:disabled{opacity:.4;cursor:default}
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.steps li{display:grid;grid-template-columns:28px minmax(0,1fr);align-items:center;gap:12px;padding:5px 10px;border-radius:10px;font-size:15px;line-height:1.3;color:var(--muted);transition:background-color .3s,color .3s}
+.steps li i{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font:700 12.5px/1 var(--f);font-style:normal;border:1.5px solid var(--line);color:var(--muted);padding-top:2px;transition:all .3s var(--ease)}
+.steps li i svg{width:14px;height:14px;margin-top:-2px}
+.steps li span{padding-top:2px}
+.steps li.done{color:var(--ink)}
+.steps li.done i{background:var(--btn);border-color:var(--btn);color:#fff}
+.steps li.now{background:var(--surface-2);color:var(--ink);font-weight:700}
+.steps li.now i{border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 4px var(--ring)}
+.tele{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.tele div{padding:10px 12px 8px;border-top:1px solid var(--line)}
+.tele div:nth-child(-n+3){border-top:0}
+.tele div:not(:nth-child(3n+1)){border-left:1px solid var(--line)}
 dt{font-size:12.5px;color:var(--muted)}
-dd{margin:2px 0 0;font:600 24px/1.2 var(--cond);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+dd{margin:2px 0 0;font:750 17px/1.25 var(--f);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .3s}
 dd.ok{color:var(--ok)}dd.bad{color:var(--accent)}
-.serial{background:#0f1113;color:#d7dbe0;border-radius:8px;padding:12px 14px;font:12.5px/1.55 var(--mono);height:250px;overflow-y:auto}
-.serial{padding-top:0}.serial .h{position:sticky;top:0;display:flex;justify-content:space-between;color:#7d848d;font-family:var(--sans);font-size:12.5px;padding:12px 0 8px;background:#0f1113}
-.serial ul{list-style:none;margin:0;padding:0}
-.serial li{display:grid;grid-template-columns:96px minmax(0,1fr);gap:8px;padding:2px 0}
-.serial li span:last-child{overflow-wrap:anywhere}
-.c-esp{color:#7fb1ff}.c-site{color:#c3a8ff}.c-srv{color:#d0d4da}.c-mp{color:#5fd4ea}.c-sen{color:#f0c35b}
-.note{font-size:13.5px;color:var(--muted);margin:16px 0 0}
-@media(max-width:900px){.strip{grid-template-columns:minmax(0,1fr)}.serial{margin-top:18px}}
-@media(max-width:640px){.stage{aspect-ratio:auto;height:78vh;min-height:520px}.hud.b{flex-direction:column;align-items:stretch}.caption{max-width:none}.transport{justify-content:flex-end}
- .hud.t{flex-direction:column}.tele{grid-template-columns:repeat(2,minmax(0,1fr))}.tele div{padding-left:0!important;border-left:0!important}}
 
-/* verbete */
-.wiki{background:var(--paper);border-top:1px solid var(--rule);margin-top:48px;padding:clamp(36px,5vw,64px) 0 72px}
-.wgrid{display:grid;grid-template-columns:200px minmax(0,1fr);gap:48px}
-.toc{position:sticky;top:84px;align-self:start;font-size:14px}
-.toc b{display:block;font-weight:600;margin-bottom:8px}
-.toc ol{margin:0;padding:0 0 0 18px;color:var(--muted)}
-.toc li{margin:5px 0}
-.toc a{text-decoration:none;color:var(--muted)}
-.toc a:hover{color:var(--ink)}
-@media(max-width:1000px){.wgrid{grid-template-columns:minmax(0,1fr)}.toc{position:static;border:1px solid var(--rule);border-radius:8px;padding:14px 16px}}
-.art{font:17px/1.68 var(--serif);max-width:820px}
-.art h1{font:600 clamp(32px,4vw,44px)/1.1 var(--serif);letter-spacing:0;margin:0}
-.art .sub{font:14px/1.4 var(--sans);color:var(--muted);margin:6px 0 22px;padding-bottom:14px;border-bottom:1px solid var(--rule)}
-.art h2{font:600 27px/1.2 var(--serif);margin:42px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--rule);display:flow-root}
-.art h3{font:600 19px/1.3 var(--sans);margin:26px 0 8px}
-.art p{margin:0 0 14px}
-.art ul,.art ol{padding-left:22px;margin:0 0 14px}
-.art li{margin:5px 0}
-.art code{font:14.5px var(--mono);background:var(--soft);padding:1px 5px;border-radius:4px}
-.art table{width:100%;border-collapse:collapse;font:14.5px/1.45 var(--sans);margin:6px 0 18px}
-.art th,.art td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--rule);vertical-align:top}
-.art th{font-weight:600;font-size:13px;color:var(--muted);background:var(--soft)}
+/* ---------- registro serial ---------- */
+.serial{margin-top:14px;background:var(--log);color:#DCE6F4;border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--line)}
+:root[data-theme=light] .serial{border-color:var(--log)}
+.serial .h{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 20px;padding:14px 20px 12px;border-bottom:1px solid rgba(255,255,255,.1)}
+.serial .h strong{font-size:15px;font-weight:700;color:#fff}
+.serial .h small{font-size:13px;color:#9FB3CF;margin-left:10px;font-weight:400}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin:0;padding:0;list-style:none;font-size:13px}
+.legend li{display:flex;align-items:center;gap:6px}
+.legend li::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor;margin-top:-2px}
+.serial ul.out{list-style:none;margin:0;padding:12px 20px 14px;height:220px;overflow-y:auto;font:13px/1.6 var(--mono)}
+.serial ul.out li{display:grid;grid-template-columns:112px minmax(0,1fr);gap:10px;animation:line .35s var(--ease)}
+@keyframes line{from{opacity:0;transform:translateX(-4px)}}
+.serial ul.out li span:first-child{font-weight:600}
+.serial ul.out li span:last-child{overflow-wrap:anywhere}
+code,.serial,.link,.sheet td{font-variant-ligatures:none}
+.c-esp{color:#7DB4FF}.c-site{color:#FFFFFF}.c-srv{color:#A9BCD6}.c-mp{color:#6EE0F0}.c-sen{color:#FFD27A}
+.note{font-size:14px;color:var(--muted);margin:14px 2px 0;max-width:90ch}
+
+/* ---------- enciclopédia ---------- */
+.wiki{background:var(--wiki);border-top:1px solid var(--line);margin-top:clamp(48px,6vw,80px);padding:clamp(36px,5vw,64px) 0 80px}
+.wgrid{display:grid;grid-template-columns:220px minmax(0,1fr);gap:40px}
+.toc{position:sticky;top:calc(var(--hdr) + 28px);align-self:start;font-size:14.5px}
+.toc summary{display:block;font-weight:750;margin:0 0 10px 14px;color:var(--ink);list-style:none;pointer-events:none}
+.toc summary::-webkit-details-marker{display:none}
+.toc ol{margin:0;padding:0;list-style:none;border-left:2px solid var(--line)}
+.toc li{margin:0}
+.toc a{display:block;text-decoration:none;color:var(--muted);padding:6px 12px 5px;margin-left:-2px;border-left:2px solid transparent;transition:color .2s,border-color .2s}
+.toc a:hover{color:var(--accent)}
+.toc a.on{color:var(--accent);font-weight:700;border-left-color:var(--accent)}
+.art{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:clamp(22px,4.5vw,56px);font-size:17.5px;line-height:1.72;display:flow-root}
+.art>p,.art>ul,.art>ol{max-width:74ch}
+.art h1{font:820 clamp(32px,4.2vw,48px)/1.04 var(--f);letter-spacing:-.022em;margin:0}
+.art .sub{max-width:none;display:flex;flex-wrap:wrap;gap:4px 18px;font-size:14.5px;line-height:1.4;color:var(--muted);margin:12px 0 28px;padding-bottom:20px;border-bottom:1px solid var(--line)}
+.art h2{font:780 27px/1.18 var(--f);letter-spacing:-.012em;margin:52px 0 14px}
+.art h3{font:750 19px/1.3 var(--f);margin:28px 0 8px}
+.art p{margin:0 0 16px}
+.art ul,.art ol{padding-left:22px;margin:0 0 16px}
+.art li{margin:6px 0}
+.art li::marker{color:var(--accent)}
+.art b{font-weight:700}
+.art code{font:600 .84em var(--mono);background:var(--surface-3);color:var(--code);padding:2px 6px 1px;border-radius:6px}
+.art table{width:100%;border-collapse:separate;border-spacing:0;font-size:15px;line-height:1.5;margin:8px 0 22px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.art th,.art td{text-align:left;padding:10px 14px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.art tr:last-child td{border-bottom:0}
+.art th{font-weight:700;font-size:13.5px;color:var(--accent-2);background:var(--surface-2)}
 .art td.n,.art th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-.art .cap{font:13px/1.45 var(--sans);color:var(--muted);margin:-8px 0 20px}
-.infobox{float:right;width:300px;margin:4px 0 20px 28px;border:1px solid var(--rule);background:var(--soft);font:13.5px/1.45 var(--sans)}
-.infobox .ttl{font:600 17px/1.25 var(--sans);text-align:center;padding:12px 10px 8px}
-.infobox .pic{background:#16181c;display:block}
-.infobox table{margin:0;font-size:13.5px}
-.infobox th{background:none;color:var(--ink);font-size:13px;width:42%;padding:7px 10px}
-.infobox td{padding:7px 10px}
-@media(max-width:700px){.infobox{float:none;width:100%;margin:0 0 22px}}
-.arch{display:grid;grid-template-columns:repeat(7,auto);align-items:center;gap:0;margin:8px 0 6px;font-family:var(--sans)}
-.node{border:1px solid var(--ink);border-radius:6px;padding:12px 12px;background:var(--paper);text-align:center}
-.node b{display:block;font-size:14.5px;line-height:1.25}
-.node small{display:block;color:var(--muted);font-size:12.5px;line-height:1.35;margin-top:4px}
-.node.pay{border-color:var(--accent)}
-.link{display:grid;justify-items:center;padding:0 6px;font-size:11.5px;line-height:1.3;color:var(--muted);text-align:center;min-width:86px}
-.link i{display:block;width:100%;height:1px;background:var(--ink);margin:6px 0;position:relative}
-.link i::before,.link i::after{content:"";position:absolute;top:-4px;border:4.5px solid transparent}
-.link i::after{right:-1px;border-left-color:var(--ink);border-right:0}
-.link i::before{left:-1px;border-right-color:var(--ink);border-left:0}
-@media(max-width:820px){.arch{grid-template-columns:minmax(0,1fr)}.link{padding:6px 0}.link i{width:1px;height:26px;margin:4px auto}
- .link i::after{right:auto;left:-4px;top:auto;bottom:-1px;border:4.5px solid transparent;border-top-color:var(--ink);border-bottom:0}
- .link i::before{left:-4px;top:-1px;border:4.5px solid transparent;border-bottom-color:var(--ink);border-top:0}}
-.formula{font:19px/1.5 var(--serif);text-align:center;padding:14px;margin:6px 0 16px;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
-.calc{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 24px;align-items:center;border:1px solid var(--rule);border-radius:8px;padding:18px 20px;margin:4px 0 22px;font-family:var(--sans)}
-.calc label{font-size:14px;color:var(--muted)}
-.calc input[type=range]{width:100%;accent-color:var(--accent);height:32px}
+.art .cap{font-size:14px;line-height:1.5;color:var(--muted);margin:-6px 0 22px}
+.infobox{float:right;width:310px;margin:4px 0 24px 32px;border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;background:var(--surface);font-size:14px;line-height:1.45}
+.infobox .ttl{font:780 18px/1.2 var(--f);color:#fff;background:var(--plate);text-align:center;padding:15px 12px 12px;box-shadow:inset 0 0 0 4px var(--plate),inset 0 0 0 5.5px rgba(255,255,255,.9);border-radius:var(--r-md) var(--r-md) 0 0}
+.infobox .pic{display:block;width:100%;height:auto}
+.art .infobox table{margin:0;font-size:14px;border:0;border-radius:0}
+.infobox th{background:none;color:var(--ink);font-size:13.5px;width:40%;padding:8px 12px 6px}
+.infobox td{padding:8px 12px 6px}
+.arch{display:grid;grid-template-columns:repeat(7,auto);align-items:center;margin:12px 0 10px}
+.node{border:1.5px solid var(--accent);border-radius:12px;padding:14px 12px 11px;background:var(--surface);text-align:center}
+.node b{display:block;font-size:15.5px;line-height:1.25;color:var(--ink)}
+.node small{display:block;color:var(--muted);font-size:13px;line-height:1.35;margin-top:5px}
+.node.pay{background:var(--plate);border-color:var(--plate);box-shadow:inset 0 0 0 3px var(--plate),inset 0 0 0 4.5px rgba(255,255,255,.9)}
+.node.pay b{color:#fff}.node.pay small{color:#D6E5F9}
+.link{display:grid;justify-items:center;padding:0 6px;font:600 12px/1.3 var(--mono);color:var(--accent-2);text-align:center;min-width:92px}
+.link i{display:block;width:100%;height:1.5px;background:var(--accent);margin:7px 0;position:relative}
+.link i::before,.link i::after{content:"";position:absolute;top:-4px;border:4.75px solid transparent}
+.link i::after{right:-1px;border-left-color:var(--accent);border-right:0}
+.link i::before{left:-1px;border-right-color:var(--accent);border-left:0}
+.formula{font:500 20px/1.5 var(--f);text-align:center;padding:18px 14px 14px;margin:8px 0 18px;background:var(--surface-2);border-radius:12px}
+.calc{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 28px;align-items:center;border:1.5px solid var(--line);border-radius:var(--r-md);padding:20px 22px;margin:6px 0 24px;background:var(--surface)}
+.calc label{font-size:15px;color:var(--muted)}
+.calc input[type=range]{width:100%;accent-color:var(--btn);height:32px;cursor:pointer}
 .calc .out{text-align:right;grid-row:span 2}
-.calc .out b{display:block;font:600 40px/1 var(--cond);font-variant-numeric:tabular-nums}
-.calc .out small{font-size:13px;color:var(--muted)}
-.calc .t{font:600 18px var(--cond);font-variant-numeric:tabular-nums}
-.figs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin:4px 0 18px;font-family:var(--sans)}
-.figs div{padding:14px 12px 14px 0}
-.figs div+div{padding-left:14px;border-left:1px solid var(--rule)}
-.figs b{display:block;font:600 34px/1 var(--cond);font-variant-numeric:tabular-nums}
-.figs span{font-size:13px;color:var(--muted)}
-@media(max-width:640px){.figs{grid-template-columns:repeat(2,minmax(0,1fr))}.figs div{padding-left:0!important;border-left:0!important}}
-.facts{list-style:none;padding:0!important}
-.facts li{padding:10px 0 10px 18px;border-bottom:1px solid var(--rule);position:relative;margin:0}
-.facts li::before{content:"";position:absolute;left:0;top:21px;width:7px;height:7px;background:var(--accent)}
-.refs{font-size:14.5px;line-height:1.55}
-.refs li{margin:6px 0}
-footer{border-top:1px solid var(--rule);padding:22px 0;font-size:13.5px;color:var(--muted)}
-pre,.scroll{overflow-x:auto}
-@media(max-width:600px){.art table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px;border-bottom:1px solid var(--rule)}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:8em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:7.5em;margin-inline-start:-8em;white-space:normal;color:var(--muted)}.stack td:empty{display:none}}
-@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.lbl3d{transition:none}}
+.calc .out b{display:block;font:820 44px/1 var(--f);letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--accent)}
+.calc .out small{font-size:13.5px;color:var(--muted)}
+.calc .t{font:750 19px var(--f);font-variant-numeric:tabular-nums;color:var(--ink)}
+.figs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:8px 0 20px}
+.figs div{padding:16px 16px 12px;background:var(--surface-2);border-radius:12px}
+.figs b{display:block;font:820 40px/1 var(--f);letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--accent);margin-bottom:6px}
+.figs span{font-size:14px;line-height:1.35;color:var(--muted);display:block}
+.facts{list-style:none;padding:0!important;max-width:none!important}
+.facts li{padding:12px 0 10px 24px;border-bottom:1px solid var(--line);position:relative;margin:0}
+.facts li:last-child{border-bottom:0}
+.facts li::before{content:"";position:absolute;left:2px;top:22px;width:9px;height:9px;border-radius:3px;background:var(--accent)}
+.refs{font-size:15px;line-height:1.6}
+.refs li{margin:8px 0}
+footer{background:var(--bg);border-top:1px solid var(--line);padding:26px 0 calc(26px + env(safe-area-inset-bottom));font-size:14px;color:var(--muted)}
+footer .wrap{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 24px}
+footer .brand{font-size:16px}
+
+/* um único momento de entrada, na abertura */
+.intro,.sim{animation:rise .7s var(--ease) both}
+.sim{animation-delay:.12s}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}}
+
+/* ================= TELAS ================= */
+/* computador grande */
+@media(min-width:1600px){.wrap{max-width:1520px}.sim{grid-template-columns:minmax(0,1fr) 410px}}
+
+/* notebook pequeno e tablet deitado: controle em duas colunas embaixo da cena */
+@media(max-width:1100px){
+  .sim{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto}
+  .stage{grid-row:auto;grid-column:1/-1;min-height:0;height:min(68vh,640px)}
+  .dock{grid-column:1}.panel{grid-column:2}
+}
+@media(max-width:1000px){
+  .wgrid{grid-template-columns:minmax(0,1fr)}
+  .toc{position:static;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:0}
+  .toc summary{pointer-events:auto;cursor:pointer;margin:0;padding:16px 18px 14px;display:flex;justify-content:space-between;align-items:center}
+  .toc summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg) translate(-2px,-2px);transition:transform .25s}
+  .toc details[open] summary::after{transform:rotate(-135deg) translate(-2px,-2px)}
+  .toc ol{columns:2;column-gap:20px;border:0;padding:0 18px 14px}
+  .toc a{border:0;padding:6px 0}
+}
+@media(max-width:860px){
+  .intro{grid-template-columns:minmax(0,1fr)}
+  .arch{grid-template-columns:minmax(0,1fr)}.link{padding:6px 0}.link i{width:1.5px;height:26px;margin:4px auto}
+  .link i::after{right:auto;left:-4px;top:auto;bottom:-1px;border:4.75px solid transparent;border-top-color:var(--accent);border-bottom:0}
+  .link i::before{left:-4px;top:-1px;border:4.75px solid transparent;border-bottom-color:var(--accent);border-top:0}
+}
+@media(max-width:760px){.infobox{float:none;width:100%;margin:0 0 24px}}
+
+/* celular: cena quase em tela cheia, painel do passo preso no rodapé */
+@media(max-width:680px){
+  :root{--hdr:60px}
+  .wrap{padding:0 14px}
+  .brand{font-size:17px;gap:10px}.brand svg{width:32px;height:32px}
+  .nav a{padding:10px 9px;font-size:14.5px}
+  .nav a[data-sec=simulacao],.nav a[data-sec=tarifacao]{display:none}
+  .theme{width:40px;height:40px}
+  .intro{padding:22px 0 18px;gap:14px}
+  h1{font-size:clamp(30px,8.6vw,40px);line-height:1.02}
+  .lead{font-size:16px;margin-bottom:14px}
+  .hints{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -14px;padding:0 14px 2px}
+  .hints::-webkit-scrollbar{display:none}
+  .hints li{font-size:13.5px}
+  .sim{grid-template-columns:minmax(0,1fr);gap:10px}
+  .stage{grid-column:1;height:max(340px,min(calc(100svh - var(--hdr) - 250px),112vw));border-radius:18px}
+  .hud{padding:10px;gap:8px}
+  .seg{padding:3px;border-radius:11px}
+  .seg b{display:none}
+  .seg button{padding:2px 10px 0;font-size:13.5px;min-height:34px}
+  .lbl3d{font-size:11.5px;padding:5px 8px 3px 7px}
+  .sheet{top:auto;bottom:10px;right:10px;left:10px;width:auto;max-height:60%}
+  .dock{grid-column:1;position:sticky;bottom:max(10px,env(safe-area-inset-bottom));z-index:12;padding:10px;gap:10px;box-shadow:0 14px 36px -10px var(--shadow),0 0 0 1px var(--line)}
+  .panel{grid-column:1}
+  .plate{padding:14px 16px 13px}
+  .plate .k{font-size:13px;margin-bottom:4px}
+  .plate h2{font-size:21px;margin-bottom:4px}
+  .plate p{font-size:14px;line-height:1.4}
+  .prog{margin-top:10px}
+  .transport{grid-template-columns:48px minmax(0,1fr) minmax(0,1fr)}
+  .btn{min-height:46px;padding:3px 10px 0;font-size:14.5px}
+  #btnNext svg{display:none}
+  .serial ul.out{height:200px;padding:10px 14px 12px;font-size:12px}
+  .serial ul.out li{grid-template-columns:92px minmax(0,1fr);gap:6px}
+  .serial .h{padding:12px 14px 10px}
+  .wiki{padding:28px 0 56px}
+  .wgrid{gap:16px}
+  .art{font-size:16.5px;line-height:1.68;border-radius:18px}
+  .art h2{font-size:24px;margin-top:40px}
+  .figs{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .figs b{font-size:34px}
+  .calc{grid-template-columns:minmax(0,1fr);padding:16px}.calc .out{text-align:left;grid-row:auto}
+  .art table{font-size:14px}
+  .stack thead{display:none}.stack tr{display:grid;padding-block:10px;border-bottom:1px solid var(--line)}.stack tr:last-child{border-bottom:0}
+  .stack td{display:flow-root;border:0;padding:3px 14px;padding-inline-start:9em;text-align:start}
+  .stack td::before{content:attr(data-l);float:inline-start;width:7.5em;margin-inline-start:-8em;white-space:normal;color:var(--muted);font-size:13px}.stack td:empty{display:none}
+}
+@media(max-width:520px){.toc ol{columns:1}}
+@media(max-width:360px){.brand span{font-size:15px}.tele dd{font-size:15px}}
+
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 <script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
 </head>
 <body>
 <header class="top"><div class="wrap">
-  <a class="brand" href="#simulacao" aria-label="SmartPark RFID">
-    <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><rect x="3" y="6" width="4" height="17" rx="1" fill="currentColor"/><rect x="6" y="9" width="18" height="3.2" rx="1.6" fill="#e5482d" transform="rotate(-28 6 10.6)"/></svg>
-    SmartPark RFID
+  <a class="brand" href="#simulacao" aria-label="SmartPark RFID, início">
+    <svg width="36" height="36" viewBox="0 0 36 36" aria-hidden="true"><rect width="36" height="36" rx="8" fill="#0B4EA2"/><rect x="2.5" y="2.5" width="31" height="31" rx="6" fill="none" stroke="#fff" stroke-width="1.5"/><rect x="9" y="10" width="4.2" height="17" rx="1.2" fill="#fff"/><rect x="11" y="13" width="17" height="3.4" rx="1.7" fill="#fff" transform="rotate(-24 11 14.7)"/></svg>
+    <span>SmartPark RFID</span>
   </a>
-  <nav class="nav"><a href="#simulacao">Simulação</a><a href="#enciclopedia">Enciclopédia</a></nav>
+  <div class="right">
+    <nav class="nav" aria-label="Seções"><a href="#simulacao" data-sec="simulacao">Simulação</a><a href="#tarifacao" data-sec="tarifacao">Tarifa</a><a href="#enciclopedia" data-sec="enciclopedia">Enciclopédia</a></nav>
+    <button class="theme" id="themeBtn" type="button" aria-label="Ativar modo claro" title="Ativar modo claro">
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
+      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
+    </button>
+  </div>
 </div></header>
 
 <main id="simulacao" class="wrap">
   <div class="intro">
     <h1>A cancela só abre depois que o PIX cai.</h1>
-    <p>Modelo 3D do SmartPark RFID: maquete, circuito e o ciclo completo de uma estadia, simulados do jeito que o código do projeto funciona. Arraste para girar e toque em um componente para ver as ligações.</p>
+    <div>
+      <p class="lead">Modelo 3D do SmartPark RFID: a maquete, o circuito e o ciclo completo de uma estadia, simulados do jeito que o código do projeto funciona.</p>
+      <ul class="hints" aria-label="Como explorar a cena">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>Arraste para girar</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5M8 11h6M11 8v6"/></svg><span class="fine">Role para aproximar</span><span class="coarse">Use dois dedos para aproximar</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3v4M3 9h4M5 5l2.5 2.5"/><path d="M11 11l9 3.5-4 1.5-1.5 4z"/></svg><span class="fine">Clique num componente</span><span class="coarse">Toque num componente</span></li>
+      </ul>
+    </div>
   </div>
 
-  <div class="stage" id="stage">
-    <div class="hud t">
-      <div class="seg" role="group" aria-label="Câmera">
-        <button data-cam="geral" aria-pressed="true">Geral</button><button data-cam="pista" aria-pressed="false">Pista</button><button data-cam="cancela" aria-pressed="false">Cancela</button><button data-cam="circuito" aria-pressed="false">Circuito</button>
+  <div class="sim">
+    <div class="stage" id="stage">
+      <div class="hud">
+        <div class="seg" role="group" aria-label="Câmera"><b aria-hidden="true">Vista</b>
+          <button data-cam="geral" aria-pressed="true">Geral</button><button data-cam="pista" aria-pressed="false">Pista</button><button data-cam="cancela" aria-pressed="false">Cancela</button><button data-cam="circuito" aria-pressed="false">Circuito</button>
+        </div>
+        <div class="seg" role="group" aria-label="Mostrar na cena">
+          <button id="tgWires" aria-pressed="true">Fios</button><button id="tgLabels" aria-pressed="true">Nomes</button>
+        </div>
       </div>
-      <div class="seg" role="group" aria-label="Mostrar">
-        <button id="tgWires" aria-pressed="true">Fios</button><button id="tgLabels" aria-pressed="true">Nomes</button>
-      </div>
+      <aside class="sheet" id="sheet" hidden><button class="x" id="sheetX" aria-label="Fechar ficha do componente">×</button><h3 id="shT"></h3><p id="shD"></p><table id="shP"></table></aside>
     </div>
-    <aside class="sheet" id="sheet" hidden><button class="x" id="sheetX" aria-label="Fechar">×</button><h3 id="shT"></h3><p id="shD"></p><table id="shP"></table></aside>
-    <div class="hud b">
-      <div class="caption" aria-live="polite"><p class="k" id="capK"></p><h2 id="capT"></h2><p id="capD"></p></div>
+
+    <section class="dock card" aria-label="Controle da simulação">
+      <div class="plate" aria-live="polite">
+        <div class="txt" id="plateTxt"><p class="k" id="capK"></p><h2 id="capT"></h2><p id="capD"></p></div>
+        <div class="prog" aria-hidden="true"><i id="progFill"></i></div>
+      </div>
       <div class="transport">
-        <button class="ic" id="btnReset" title="Reiniciar" aria-label="Reiniciar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/></svg></button>
-        <button class="ic" id="btnNext" title="Avançar um passo" aria-label="Avançar um passo"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5l9 7-9 7z"/><rect x="16.5" y="5" width="2.5" height="14" rx="1"/></svg></button>
-        <button class="ic main" id="btnPlay" title="Reproduzir tudo" aria-label="Reproduzir tudo"><svg id="icPlay" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5l13 7.5-13 7.5z"/></svg></button>
+        <button class="btn icon" id="btnReset" title="Reiniciar" aria-label="Reiniciar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/></svg></button>
+        <button class="btn" id="btnNext" title="Avançar um passo"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 5l9 7-9 7z"/><rect x="16.5" y="5" width="2.5" height="14" rx="1"/></svg>Próximo passo</button>
+        <button class="btn main" id="btnPlay" title="Reproduzir tudo"><svg id="icPlay" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5l13 7.5-13 7.5z"/></svg><span id="playTxt">Reproduzir</span></button>
       </div>
-    </div>
+    </section>
+
+    <section class="panel card" aria-label="Andamento e estado do sistema">
+      <ol class="steps" id="timeline" aria-label="Etapas da estadia"></ol>
+      <dl class="tele" id="tele" aria-label="Estado do sistema"></dl>
+    </section>
   </div>
 
-  <section class="strip" aria-label="Painel da simulação">
-    <ol class="timeline" id="timeline"></ol>
-    <dl class="tele" id="tele"></dl>
-    <div class="serial" aria-live="polite"><div class="h"><span>Registro do sistema</span><span>serial 9600 baud</span></div><ul id="log"></ul></div>
+  <section class="serial" aria-label="Registro do sistema">
+    <div class="h"><strong>Registro do sistema<small>serial 9600 baud</small></strong>
+      <ul class="legend" aria-label="Origem das mensagens"><li class="c-esp">ESP32</li><li class="c-site">Site</li><li class="c-srv">Servidor</li><li class="c-mp">Mercado Pago</li><li class="c-sen">Sensor</li></ul>
+    </div>
+    <ul class="out" id="log" aria-live="polite"></ul>
   </section>
   <p class="note">Placa do veículo, horários e identificadores da simulação são de exemplo. A tarifa segue a tabela usada nos testes do projeto: até 30 min, R$ 5,00.</p>
 </main>
 
 <section class="wiki" id="enciclopedia"><div class="wrap wgrid">
-  <nav class="toc" aria-label="Sumário"><b>Sumário</b><ol>
+  <nav class="toc" aria-label="Sumário"><details id="tocD" open><summary>Sumário</summary><ol>
     <li><a href="#origem">Origem e objetivo</a></li><li><a href="#arquitetura">Arquitetura</a></li><li><a href="#funcionamento">Funcionamento</a></li>
     <li><a href="#hardware">Hardware e firmware</a></li><li><a href="#software">Software</a></li><li><a href="#tarifacao">Tarifação</a></li>
     <li><a href="#pix">Pagamento por PIX</a></li><li><a href="#resultados">Resultados dos testes</a></li><li><a href="#curiosidades">Curiosidades</a></li>
-    <li><a href="#limitacoes">Limitações e futuro</a></li><li><a href="#referencias">Referências</a></li></ol></nav>
+    <li><a href="#limitacoes">Limitações e futuro</a></li><li><a href="#referencias">Referências</a></li></ol></details></nav>
 
   <article class="art">
     <h1>SmartPark RFID</h1>
-    <p class="sub">Protótipo de estacionamento inteligente · Projeto de Extensão do 2º período · Faculdade Matias Machline, Manaus</p>
+    <p class="sub"><span>Protótipo de estacionamento inteligente</span><span>Projeto de Extensão do 2º período</span><span>Faculdade Matias Machline, Manaus</span></p>
 
     <aside class="infobox" aria-label="Quadro-resumo">
       <div class="ttl">SmartPark RFID</div>
       <svg class="pic" viewBox="0 0 300 150" role="img" aria-label="Cancela com leitor RFID">
-        <rect width="300" height="150" fill="#16181c"/><rect x="0" y="112" width="300" height="38" fill="#2a2d33"/>
-        <rect x="0" y="129" width="300" height="2" fill="#4a4f57"/>
-        <rect x="92" y="40" width="22" height="76" rx="2" fill="#3a3f46"/><rect x="96" y="56" width="14" height="22" rx="1.5" fill="#1b5fae"/>
-        <circle cx="103" cy="34" r="5" fill="#e5482d"/><rect x="112" y="80" width="10" height="10" fill="#2f6fd6"/>
-        <g transform="rotate(-6 120 85)"><rect x="118" y="82" width="150" height="7" fill="#f2f2f2"/><g fill="#e5482d"><rect x="132" y="82" width="14" height="7"/><rect x="160" y="82" width="14" height="7"/><rect x="188" y="82" width="14" height="7"/><rect x="216" y="82" width="14" height="7"/><rect x="244" y="82" width="14" height="7"/></g></g>
-        <rect x="20" y="96" width="56" height="20" rx="4" fill="#2563c9"/><rect x="30" y="86" width="30" height="13" rx="3" fill="#1e2a36"/>
+        <rect width="300" height="150" style="fill:var(--surface-2)"/><rect x="0" y="112" width="300" height="38" fill="#3A4558"/>
+        <rect x="0" y="129" width="300" height="2" fill="#8FA3BF"/>
+        <rect x="92" y="40" width="22" height="76" rx="2" fill="#23395C"/><rect x="96" y="56" width="14" height="22" rx="1.5" fill="#1b5fae"/>
+        <circle cx="103" cy="34" r="5" fill="#1E8A5A"/><rect x="112" y="80" width="10" height="10" fill="#2f6fd6"/>
+        <g transform="rotate(-6 120 85)"><rect x="118" y="82" width="150" height="7" fill="#ffffff"/><g fill="#0B4EA2"><rect x="132" y="82" width="14" height="7"/><rect x="160" y="82" width="14" height="7"/><rect x="188" y="82" width="14" height="7"/><rect x="216" y="82" width="14" height="7"/><rect x="244" y="82" width="14" height="7"/></g></g>
+        <rect x="20" y="96" width="56" height="20" rx="4" fill="#0B4EA2"/><rect x="30" y="86" width="30" height="13" rx="3" fill="#BFD3EE"/>
       </svg>
       <table>
         <tr><th>Tipo</th><td>Protótipo de estacionamento com controle de acesso e cobrança</td></tr>
@@ -405,7 +569,10 @@ pre,.scroll{overflow-x:auto}
   </article>
 </div></section>
 
-<footer><div class="wrap">SmartPark RFID · Projeto de Extensão (PEX), 2º período · Faculdade Matias Machline, Manaus, 2026</div></footer>
+<footer><div class="wrap">
+  <a class="brand" href="#simulacao"><svg width="28" height="28" viewBox="0 0 36 36" aria-hidden="true"><rect width="36" height="36" rx="8" fill="#0B4EA2"/><rect x="2.5" y="2.5" width="31" height="31" rx="6" fill="none" stroke="#fff" stroke-width="1.5"/><rect x="9" y="10" width="4.2" height="17" rx="1.2" fill="#fff"/><rect x="11" y="13" width="17" height="3.4" rx="1.7" fill="#fff" transform="rotate(-24 11 14.7)"/></svg><span>SmartPark RFID</span></a>
+  <span>Projeto de Extensão (PEX), 2º período. Faculdade Matias Machline, Manaus, 2026.</span>
+</div></footer>
 
 <script src="lib/three.min.js"></script>
 <script src="lib/OrbitControls.js"></script>
@@ -436,7 +603,7 @@ $('#calcT').addEventListener('input', calc); calc();
 const COMPS = [
   {id:'rfid', name:'Leitor RFID RC522', role:'No totem da cancela, à altura da janela: o motorista aproxima a tag na entrada e na saída. O ESP32 envia RFID:<UID> pela USB.',
    pins:[['3.3V','3V3','nunca no 5 V'],['RST','D22',''],['GND','GND',''],['MISO','D19','SPI'],['MOSI','D23','SPI'],['SCK','D18','SPI'],['SDA (SS)','D5',''],['IRQ','—','não liga']]},
-  {id:'servo', name:'Cancela · servo SG90', role:'0° fechada, 90° aberta. Só abre com o comando OPEN.',
+  {id:'servo', name:'Cancela (servo SG90)', role:'0° fechada, 90° aberta. Só abre com o comando OPEN.',
    pins:[['Sinal','D13',''],['+','VIN 5 V','capacitor 470–1000 µF'],['−','GND','']]},
   {id:'sonar', name:'Ultrassônico HC-SR04', role:'Do outro lado da pista, na linha da cancela, para valer nos dois sentidos. Segura a cancela aberta enquanto há carro a menos de 15 cm.',
    pins:[['VCC','VIN 5 V',''],['Trig','D25',''],['Echo','D26','divisor 1 kΩ / 2 kΩ'],['GND','GND','']]},
@@ -471,13 +638,13 @@ const camera = new THREE.PerspectiveCamera(38, 1.6, 0.5, 600);
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.47; controls.minDistance = 10; controls.maxDistance = 150;
 
-scene.add(new THREE.HemisphereLight(0xffffff, 0x5c5f66, 0.6));
-const sun = new THREE.DirectionalLight(0xffffff, 0.75);
-sun.position.set(28, 55, 24); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+const hemi = new THREE.HemisphereLight(0xffffff, 0xb4c6e2, 0.78); scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+sun.position.set(28, 55, 24); sun.castShadow = true; { const sm = innerWidth < 700 ? 1024 : 2048; sun.shadow.mapSize.set(sm, sm); }
 Object.assign(sun.shadow.camera, {left:-48, right:48, top:40, bottom:-40, near:1, far:150}); sun.shadow.bias = -0.0006;
 scene.add(sun);
 
-const shadowPlane = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.ShadowMaterial({opacity:0.35}));
+const shadowPlane = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.ShadowMaterial({color:0x0a1f3d, opacity:0.14}));
 shadowPlane.rotation.x = -Math.PI / 2; shadowPlane.position.y = -1.5; shadowPlane.receiveShadow = true; scene.add(shadowPlane);
 { const rim = new THREE.DirectionalLight(0x9fb4ff, 0.25); rim.position.set(-30, 20, -40); scene.add(rim); }
 
@@ -490,16 +657,23 @@ function tex(w, h, draw){ const c = document.createElement('canvas'); c.width = 
 const faceMat = (base, t, face) => { const a = [base, base, base, base, base, base]; a[face] = new THREE.MeshStandardMaterial({map:t, roughness:0.6}); return a; };
 
 /* base de MDF, pista (mão dupla), vagas e textos pintados */
-box(66, 1.5, 44, mat(0xc9c5be, {roughness:0.95}), 0, -0.75, -3);
-box(66, 0.06, 12, mat(0x34383e, {roughness:0.95}), 0, 0.03, 0);
+const baseMesh = box(66, 1.5, 44, mat(0xf3f6fa, {roughness:0.95}), 0, -0.75, -3);
+box(66, 0.06, 12, mat(0x384356, {roughness:0.95}), 0, 0.03, 0);
 const white = mat(0xf2f2f2);
 box(66, 0.08, 0.3, white, 0, 0.05, 5.6); box(66, 0.08, 0.3, white, 0, 0.05, -5.6);
 for (let x = -30; x < 31; x += 6) if (Math.abs(x - 3) > 4) box(3, 0.08, 0.22, mat(0xd9dce0), x, 0.05, 0);
-const slotMat = mat(0x6d7279); [6, 14, 22, 30].forEach(x => box(0.3, 0.08, 10.2, slotMat, x, 0.05, 12.5)); box(24.3, 0.08, 0.3, slotMat, 18, 0.05, 17.6);
-function paintText(txt, x, z, w){ const t = tex(512, 128, (g, W, H) => { g.fillStyle = '#a19c93'; g.font = '600 96px "IBM Plex Sans Condensed", sans-serif'; g.textAlign = 'center'; g.fillText(txt, W / 2, 98); });
+const slotMat = mat(0x9fb1c9); [6, 14, 22, 30].forEach(x => box(0.3, 0.08, 10.2, slotMat, x, 0.05, 12.5)); box(24.3, 0.08, 0.3, slotMat, 18, 0.05, 17.6);
+function paintText(txt, x, z, w){ const t = tex(512, 128, (g, W, H) => { g.fillStyle = '#8ea3c0'; g.font = '600 96px "Overpass", sans-serif'; g.textAlign = 'center'; g.fillText(txt, W / 2, 98); });
   const m = new THREE.Mesh(new THREE.PlaneGeometry(w, w / 4), new THREE.MeshBasicMaterial({map:t, transparent:true})); m.rotation.x = -Math.PI / 2; m.position.set(x, 0.02, z); scene.add(m); return t; }
 const paintTex = [paintText('RUA', -20, 10.5, 12), paintText('PÁTIO', 18, -8.6, 12)];
-box(1.0, 0.14, 12.4, mat(0x4a5058), 5.2, 0.07, 0);
+box(1.0, 0.14, 12.4, mat(0x56637a), 5.2, 0.07, 0);
+
+/* tema: escuro (padrão) ou claro */
+function sceneTheme(){ const dark = document.documentElement.dataset.theme !== 'light';
+  hemi.groundColor.set(dark ? 0x4f6a99 : 0xb4c6e2); hemi.intensity = dark ? 0.72 : 0.78; sun.intensity = dark ? 0.85 : 0.8;
+  shadowPlane.material.color.set(dark ? 0x000000 : 0x0a1f3d); shadowPlane.material.opacity = dark ? 0.38 : 0.14;
+  baseMesh.material.color.set(dark ? 0xd5dfec : 0xf3f6fa); }
+sceneTheme(); addEventListener('temachange', sceneTheme);
 
 /* carro */
 const car = new THREE.Group(); scene.add(car);
@@ -513,18 +687,18 @@ const tire = mat(0x1a1a1a, {roughness:0.9});
 [[3, 2.3], [3, -2.3], [-3, 2.3], [-3, -2.3]].forEach(p => { const w = cyl(0.95, 0.8, tire, p[0], 0.95, p[1], car); w.rotation.x = Math.PI / 2; });
 const setCar = (x, z, h) => { car.position.set(x, 0, z); car.rotation.y = h; };
 /* cartão/tag que o motorista aproxima do leitor */
-const tagT = tex(256, 160, (g, w, h) => { g.fillStyle = '#fafafa'; g.fillRect(0, 0, w, h); g.strokeStyle = '#c9ced4'; g.lineWidth = 6; g.strokeRect(10, 10, w - 20, h - 20); g.fillStyle = '#14181d'; g.font = '600 44px "IBM Plex Sans", sans-serif'; g.textAlign = 'center'; g.fillText('TAG RFID', w / 2, 80); g.font = '500 30px "IBM Plex Sans", sans-serif'; g.fillText(UID, w / 2, 122); });
+const tagT = tex(256, 160, (g, w, h) => { g.fillStyle = '#fafafa'; g.fillRect(0, 0, w, h); g.strokeStyle = '#c9ced4'; g.lineWidth = 6; g.strokeRect(10, 10, w - 20, h - 20); g.fillStyle = '#14181d'; g.font = '600 44px "Overpass", sans-serif'; g.textAlign = 'center'; g.fillText('TAG RFID', w / 2, 80); g.font = '500 30px "Overpass", sans-serif'; g.fillText(UID, w / 2, 122); });
 const tagMat = new THREE.MeshStandardMaterial({map:tagT, roughness:0.6});
 const card = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.4, 0.06), [white, white, white, white, tagMat, tagMat]); card.visible = false; scene.add(card);
 
 /* totem da cancela: leitor RFID, LEDs, buzzer e servo no mesmo poste */
 const servo = new THREE.Group(); scene.add(servo);
 const grey = mat(0x7a8088);
-box(2.4, 7.2, 2, mat(0x3a3f46), 0, 3.6, -9.5, servo);
+box(2.4, 7.2, 2, mat(0x23395c, {roughness:0.55}), 0, 3.6, -9.5, servo);
 box(1.2, 2.3, 2.2, mat(0x2f6fd6, {roughness:0.4}), 1.8, 3.6, -8.9, servo);
 const shaft = cyl(0.3, 0.5, mat(0xffffff), 2.5, 3.6, -8.2, servo); shaft.rotation.z = Math.PI / 2;
 const armPivot = new THREE.Group(); armPivot.position.set(2.8, 3.6, -8.2); scene.add(armPivot);
-const stripes = tex(512, 64, (g, w, h) => { g.fillStyle = '#f5f5f5'; g.fillRect(0, 0, w, h); g.fillStyle = '#d7261e'; for (let x = -64; x < w; x += 64) { g.beginPath(); g.moveTo(x, h); g.lineTo(x + 32, h); g.lineTo(x + 64, 0); g.lineTo(x + 32, 0); g.closePath(); g.fill(); } });
+const stripes = tex(512, 64, (g, w, h) => { g.fillStyle = '#f5f5f5'; g.fillRect(0, 0, w, h); g.fillStyle = '#0B4EA2'; for (let x = -64; x < w; x += 64) { g.beginPath(); g.moveTo(x, h); g.lineTo(x + 32, h); g.lineTo(x + 64, 0); g.lineTo(x + 32, 0); g.closePath(); g.fill(); } });
 stripes.wrapS = THREE.RepeatWrapping; stripes.repeat.set(2, 1);
 mesh(new THREE.BoxGeometry(0.45, 0.9, 14.4), new THREE.MeshStandardMaterial({map:stripes, roughness:0.5}), 0, 0, 7.0, armPivot);
 box(0.5, 1.2, 1.4, mat(0xffffff), 0, 0, 0, armPivot);
@@ -535,11 +709,11 @@ const pcbBlue = mat(0x1b5fae, {roughness:0.5});
 const rcT = tex(420, 588, (g, w, h) => {
   g.fillStyle = '#1b5fae'; g.fillRect(0, 0, w, h); g.strokeStyle = '#d9b44a'; g.lineWidth = 7;
   for (let i = 0; i < 4; i++) { const m = 34 + i * 18; g.beginPath(); g.roundRect ? g.roundRect(m, m, w - 2 * m, 400 - 2 * m, 22) : g.rect(m, m, w - 2 * m, 400 - 2 * m); g.stroke(); }
-  g.fillStyle = '#111'; g.fillRect(150, 420, 120, 70); g.fillStyle = '#fff'; g.font = '600 30px "IBM Plex Sans", sans-serif'; g.textAlign = 'center'; g.fillText('RFID-RC522', w / 2, 530);
+  g.fillStyle = '#111'; g.fillRect(150, 420, 120, 70); g.fillStyle = '#fff'; g.font = '600 30px "Overpass", sans-serif'; g.textAlign = 'center'; g.fillText('RFID-RC522', w / 2, 530);
   g.fillStyle = '#d9b44a'; for (let i = 0; i < 8; i++) g.fillRect(48 + i * 46, 552, 22, 22);
 });
 box(3.0, 4.2, 0.16, faceMat(pcbBlue, rcT, 4), 0, 5.1, -8.42, rfid);
-const pulseMat = () => new THREE.MeshBasicMaterial({color:0xf2b705, transparent:true, opacity:0, side:THREE.DoubleSide, depthWrite:false});
+const pulseMat = () => new THREE.MeshBasicMaterial({color:0x1f6bd6, transparent:true, opacity:0, side:THREE.DoubleSide, depthWrite:false});
 const rfidRing = new THREE.Mesh(new THREE.RingGeometry(2.0, 2.3, 48), pulseMat()); rfidRing.position.set(0, 5.6, -8.25); scene.add(rfidRing);
 const READER = new THREE.Vector3(0, 5.6, -8.1);
 
@@ -557,11 +731,11 @@ function setLeds(open){ redLed.emissiveIntensity = open ? 0 : 2.2; greenLed.emis
 const SONAR_X = 2.8;
 const sonar = new THREE.Group(); scene.add(sonar);
 box(1, 1.1, 1, grey, SONAR_X, 0.55, 9.6, sonar);
-const hcT = tex(460, 210, (g, w, h) => { g.fillStyle = '#1b5fae'; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.font = '600 26px "IBM Plex Sans", sans-serif'; g.textAlign = 'center'; g.fillText('HC-SR04', w / 2, 112); g.font = '500 18px "IBM Plex Sans", sans-serif'; g.fillText('VCC  Trig  Echo  GND', w / 2, 192); });
+const hcT = tex(460, 210, (g, w, h) => { g.fillStyle = '#1b5fae'; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.font = '600 26px "Overpass", sans-serif'; g.textAlign = 'center'; g.fillText('HC-SR04', w / 2, 112); g.font = '500 18px "Overpass", sans-serif'; g.fillText('VCC  Trig  Echo  GND', w / 2, 192); });
 box(4.6, 2.1, 0.15, faceMat(pcbBlue, hcT, 5), SONAR_X, 2.1, 9.4, sonar);
 const silver = mat(0xc9ced4, {metalness:0.7, roughness:0.3});
 [SONAR_X - 1.3, SONAR_X + 1.3].forEach(x => { const c = cyl(0.8, 1.1, silver, x, 2.1, 8.75, sonar); c.rotation.x = Math.PI / 2; const f = cyl(0.62, 0.05, mat(0x30343a, {roughness:1}), x, 2.1, 8.18, sonar); f.rotation.x = Math.PI / 2; });
-const beamMat = new THREE.MeshBasicMaterial({color:0xf2b705, transparent:true, opacity:0.07, side:THREE.DoubleSide, depthWrite:false});
+const beamMat = new THREE.MeshBasicMaterial({color:0x5b8fd9, transparent:true, opacity:0.07, side:THREE.DoubleSide, depthWrite:false});
 const beam = new THREE.Mesh(new THREE.ConeGeometry(2.6, 15, 40, 1, true), beamMat);
 beam.rotation.x = Math.PI / 2; beam.position.set(SONAR_X, 2.1, 8.2 - 7.5); scene.add(beam);
 
@@ -571,7 +745,7 @@ const pbT = tex(1080, 360, (g, w, h) => { g.fillStyle = '#f4f3ee'; g.fillRect(0,
   for (let x = 20; x < w - 10; x += 18) { for (let y = 70; y < 160; y += 18) g.fillRect(x, y, 7, 7); for (let y = 200; y < 290; y += 18) g.fillRect(x, y, 7, 7); g.fillRect(x, 20, 7, 7); g.fillRect(x, 40, 7, 7); g.fillRect(x, 314, 7, 7); g.fillRect(x, 334, 7, 7); }
   g.fillStyle = '#d7261e'; g.fillRect(10, 12, w - 20, 3); g.fillRect(10, 326, w - 20, 3); g.fillStyle = '#2b6cb0'; g.fillRect(10, 52, w - 20, 3); g.fillRect(10, 346, w - 20, 3); });
 box(18, 0.9, 6, faceMat(mat(0xeceae3), pbT, 2), -1, 0.45, -18, esp);
-const espT = tex(520, 280, (g, w, h) => { g.fillStyle = '#1d1f22'; g.fillRect(0, 0, w, h); g.fillStyle = '#e8e8e8'; g.font = '600 28px "IBM Plex Sans", sans-serif'; g.fillText('ESP32 DEVKIT V1', 40, 150); g.font = '500 17px "IBM Plex Sans", sans-serif'; g.fillText('D23 D22 TX0 RX0 D21 D19 D18 D5 TX2 RX2 D4 D2 D15 GND 3V3', 12, 262); g.fillText('EN VP VN D34 D35 D32 D33 D25 D26 D27 D14 D12 D13 GND VIN', 12, 30); g.strokeStyle = '#b8a04a'; g.lineWidth = 4; g.strokeRect(440, 60, 70, 160); });
+const espT = tex(520, 280, (g, w, h) => { g.fillStyle = '#1d1f22'; g.fillRect(0, 0, w, h); g.fillStyle = '#e8e8e8'; g.font = '600 28px "Overpass", sans-serif'; g.fillText('ESP32 DEVKIT V1', 40, 150); g.font = '500 17px "Overpass", sans-serif'; g.fillText('D23 D22 TX0 RX0 D21 D19 D18 D5 TX2 RX2 D4 D2 D15 GND 3V3', 12, 262); g.fillText('EN VP VN D34 D35 D32 D33 D25 D26 D27 D14 D12 D13 GND VIN', 12, 30); g.strokeStyle = '#b8a04a'; g.lineWidth = 4; g.strokeRect(440, 60, 70, 160); });
 const ESPX = -2, ESPZ = -18;
 box(5.2, 0.16, 2.8, faceMat(mat(0x1d1f22), espT, 2), ESPX, 1.3, ESPZ, esp);
 box(4.9, 0.4, 0.26, mat(0x111111), ESPX, 1.05, ESPZ + 1.3, esp); box(4.9, 0.4, 0.26, mat(0x111111), ESPX, 1.05, ESPZ - 1.3, esp);
@@ -582,10 +756,10 @@ const beige = mat(0xd9c3a0);
 
 /* notebook com a tela do site */
 const note = new THREE.Group(); note.position.set(-22, 0, -17); scene.add(note);
-box(12, 0.5, 8, mat(0x2a2e33, {metalness:0.3, roughness:0.5}), 0, 0.25, 0, note);
-box(10.5, 0.05, 4, mat(0x1b1e22), 0, 0.52, 0.6, note);
+box(12, 0.5, 8, mat(0xb9c4d3, {metalness:0.35, roughness:0.45}), 0, 0.25, 0, note);
+box(10.5, 0.05, 4, mat(0x6b7a90), 0, 0.52, 0.6, note);
 const screenPivot = new THREE.Group(); screenPivot.position.set(0, 0.5, -3.9); screenPivot.rotation.x = -0.22; note.add(screenPivot);
-box(12, 7.6, 0.35, mat(0x2a2e33, {metalness:0.3, roughness:0.5}), 0, 3.8, 0, screenPivot);
+box(12, 7.6, 0.35, mat(0xb9c4d3, {metalness:0.35, roughness:0.45}), 0, 3.8, 0, screenPivot);
 const scrCanvas = document.createElement('canvas'); scrCanvas.width = 1024; scrCanvas.height = 620;
 const scrTex = new THREE.CanvasTexture(scrCanvas); scrTex.anisotropy = 4;
 const scr = new THREE.Mesh(new THREE.PlaneGeometry(11.2, 6.8), new THREE.MeshBasicMaterial({map:scrTex, toneMapped:false}));
@@ -617,7 +791,7 @@ wire(pin('VIN','L'), sonarIn(0), COL.red, toSonar(0)); wire(pin('D25','L'), sona
 wire(pin('D26','L'), V(5.2, 1.4, -18.8), COL.yellow, [], 0.1);
 wire(V(5.2, 1.4, -17.0), sonarIn(2), COL.yellow, toSonar(2));
 { const pts = [V(-16, 0.6, -17.6), V(-12, 0.5, -16), V(-7, 0.5, -17.2), V(ESPX - 2.9, 1.5, ESPZ)];
-  const m = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 48, 0.22, 10), mat(0x3a3f46)); m.castShadow = true; scene.add(m); }
+  const m = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 48, 0.22, 10), mat(0x56637a)); m.castShadow = true; scene.add(m); }
 
 
 /* ---------- clique em componentes ---------- */
@@ -646,13 +820,14 @@ $('#sheetX').addEventListener('click', () => { $('#sheet').hidden = true; });
 const LABELS = [['rfid','Leitor RFID',[-3.0, 5.8, -8.4]],['servo','Cancela',[2.8, 5.0, 2.2]],['sonar','Ultrassônico',[SONAR_X, 4.2, 9.4]],
   ['leds','LEDs e buzzer',[0, 10.6, -9.3]],['esp','ESP32 e protoboard',[6.5, 1.0, ESPZ]],['note','Notebook da guarita',[-22, 8.8, -19]],['car','Carro',[0, 5.4, 0]]];
 const tags = LABELS.map(([id, txt, p]) => { const d = document.createElement('div'); d.className = 'lbl3d'; d.textContent = txt; stage.appendChild(d); return {id, d, p:new THREE.Vector3(...p)}; });
-let showLabels = true;
+let showLabels = innerWidth >= 680; /* no celular os nomes começam ocultos para não encobrir a maquete */
+tags.forEach(t => { t.d.style.opacity = 0; }); $('#tgLabels').setAttribute('aria-pressed', showLabels);
 
 /* ---------- câmera ---------- */
 const CAMS = {geral:[[14, 50, 54], [2, 0, 2]], pista:[[-30, 9, 18], [2, 3, -2]], cancela:[[-12, 12, 14], [2, 4, -4]], circuito:[[8, 30, 4], [-3, 0, -15]]};
 let camAnim = null;
 function goCam(name, instant){
-  const [p, t] = CAMS[name];
+  const [p0, t0] = CAMS[name], k = Math.min(1.75, Math.max(1, 1.5 / camera.aspect)), tz = camera.aspect < 1 ? -5 : 0, t = [t0[0], t0[1], t0[2] + tz], p = p0.map((v, i) => t[i] + (v - t0[i]) * k);
   if (instant) { camera.position.set(...p); controls.target.set(...t); return; }
   camAnim = {p0:camera.position.clone(), t0:controls.target.clone(), p1:new THREE.Vector3(...p), t1:new THREE.Vector3(...t), s:performance.now()};
 }
@@ -689,7 +864,7 @@ async function readTag(){
 const SRC = {ESP32:'c-esp', Site:'c-site', Servidor:'c-srv', 'Mercado Pago':'c-mp', Sensor:'c-sen'};
 function log(src, text){
   const li = document.createElement('li'); li.innerHTML = `<span class="${SRC[src]}">${esc(src)}</span><span></span>`; li.lastChild.textContent = text;
-  $('#log').appendChild(li); const box = $('.serial'); box.scrollTop = box.scrollHeight;
+  $('#log').appendChild(li); const box = $('#log'); box.scrollTop = box.scrollHeight;
 }
 function beep(){ pulse(beepRing, 600); }
 function openGate(){ S.gateOpen = true; S.openedAt = performance.now(); S.seen = false; setLeds(true); beep(); renderStat(); }
@@ -704,16 +879,22 @@ function renderStat(){
   $('#tele').innerHTML = items.map(i => `<div><dt>${i[0]}</dt><dd class="${i[2]}">${esc(i[1])}</dd></div>`).join('');
 }
 const ICON_PLAY = '<path d="M7 4.5l13 7.5-13 7.5z"/>', ICON_PAUSE = '<rect x="6" y="4.5" width="4.2" height="15" rx="1"/><rect x="13.8" y="4.5" width="4.2" height="15" rx="1"/>';
+const CHECK = '<svg viewBox="0 0 16 16" aria-label="concluído"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+let lastKey = '';
 function renderSteps(){
   const running = busy || auto;
-  $('#timeline').innerHTML = STEPS.map((s, i) => `<li class="${i < current ? 'done' : i === current && running ? 'now' : ''}"><span>Passo ${i + 1}</span>${esc(s[0])}</li>`).join('');
+  $('#timeline').innerHTML = STEPS.map((s, i) => `<li class="${i < current ? 'done' : i === current && running ? 'now' : ''}"${i === current && running ? ' aria-current="step"' : ''}><i>${i < current ? CHECK : i + 1}</i><span>${esc(s[0])}</span></li>`).join('');
   if (current >= STEPS.length) { $('#capK').innerHTML = '<b>Concluído</b>'; $('#capT').textContent = 'Ciclo completo'; $('#capD').textContent = 'O carro entrou, ficou 27 minutos, pagou R$ 5,00 por PIX e saiu. Reinicie para ver de novo.'; }
-  else if (!running && current === 0) { $('#capK').textContent = '7 passos · cerca de 40 segundos'; $('#capT').textContent = 'Uma estadia, da rua à rua'; $('#capD').textContent = 'Reproduza tudo de uma vez ou avance passo a passo para explicar cada etapa.'; }
-  else { $('#capK').innerHTML = `<b>Passo ${current + 1}</b> de ${STEPS.length}${running ? '' : ' · pausado'}`; $('#capT').textContent = STEPS[current][0]; $('#capD').textContent = STEPS[current][1]; }
+  else if (!running && current === 0) { $('#capK').textContent = '7 passos, cerca de 40 segundos'; $('#capT').textContent = 'Uma estadia, da rua à rua'; $('#capD').textContent = 'Reproduza tudo de uma vez ou avance passo a passo para explicar cada etapa.'; }
+  else { $('#capK').innerHTML = `<b>Passo ${current + 1}</b> de ${STEPS.length}${running ? '' : ', pausado'}`; $('#capT').textContent = STEPS[current][0]; $('#capD').textContent = STEPS[current][1]; }
   $('#btnNext').disabled = running || current >= STEPS.length;
   $('#btnPlay').disabled = current >= STEPS.length || (busy && !auto);
   $('#icPlay').innerHTML = auto ? ICON_PAUSE : ICON_PLAY;
-  $('#btnPlay').setAttribute('aria-label', auto ? 'Pausar após este passo' : 'Reproduzir tudo'); $('#btnPlay').title = $('#btnPlay').getAttribute('aria-label');
+  const playLbl = auto ? 'Pausar' : current > 0 && current < STEPS.length ? 'Continuar' : 'Reproduzir';
+  $('#playTxt').textContent = playLbl; $('#btnPlay').title = auto ? 'Pausar após este passo' : playLbl;
+  $('#progFill').style.width = (current / STEPS.length * 100) + '%';
+  const key = $('#capT').textContent + '|' + $('#capK').textContent;
+  if (key !== lastKey) { lastKey = key; const el = $('#plateTxt'); el.classList.remove('swap'); void el.offsetWidth; el.classList.add('swap'); }
 }
 
 /* tela do notebook */
@@ -724,11 +905,11 @@ function qr(g, x, y, s){
   [[0, 0], [n - 7, 0], [0, n - 7]].forEach(([i, j]) => { g.fillStyle = '#111'; g.fillRect(x + i * c, y + j * c, 7 * c, 7 * c); g.fillStyle = '#fff'; g.fillRect(x + (i + 1) * c, y + (j + 1) * c, 5 * c, 5 * c); g.fillStyle = '#111'; g.fillRect(x + (i + 2) * c, y + (j + 2) * c, 3 * c, 3 * c); });
 }
 function drawScreen(){
-  const g = scrCanvas.getContext('2d'), W = 1024, H = 620, F = '"IBM Plex Sans", sans-serif', FC = '"IBM Plex Sans Condensed", sans-serif';
-  g.fillStyle = '#f5f6f7'; g.fillRect(0, 0, W, H); g.fillStyle = '#16181c'; g.fillRect(0, 0, W, 78);
-  g.fillStyle = '#e5482d'; g.fillRect(40, 28, 22, 22);
+  const g = scrCanvas.getContext('2d'), W = 1024, H = 620, F = '"Overpass", sans-serif', FC = '"Overpass", sans-serif';
+  g.fillStyle = '#ffffff'; g.fillRect(0, 0, W, H); g.fillStyle = '#0B4EA2'; g.fillRect(0, 0, W, 78);
+  g.fillStyle = '#ffffff'; g.fillRect(40, 28, 22, 22);
   g.fillStyle = '#fff'; g.font = '600 34px ' + F; g.fillText('SmartPark · Guarita', 78, 51);
-  g.font = '400 22px ' + F; g.fillStyle = '#9aa1aa'; g.textAlign = 'right'; g.fillText('Placa conectada · 9600 baud', W - 30, 48); g.textAlign = 'left';
+  g.font = '400 22px ' + F; g.fillStyle = '#cfe0f7'; g.textAlign = 'right'; g.fillText('Placa conectada · 9600 baud', W - 30, 48); g.textAlign = 'left';
   const big = (t, c = '#101214', y = 220) => { g.fillStyle = c; g.font = '600 62px ' + FC; g.fillText(t, 60, y); };
   const line = (t, y, c = '#5b6169') => { g.fillStyle = c; g.font = '400 30px ' + F; g.fillText(t, 60, y); };
   const v = brl(valor(S.min)), sc = S.screen;
@@ -804,7 +985,7 @@ if (document.fonts) document.fonts.ready.then(() => { drawScreen(); tagT.needsUp
 /* ---------- laço de renderização ---------- */
 const v3 = new THREE.Vector3(); let lastT = performance.now(), lastStat = 0;
 function resize(){ const w = stage.clientWidth, h = stage.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
-const ro = new ResizeObserver(resize); ro.observe(stage); resize();
+const ro = new ResizeObserver(resize); ro.observe(stage); resize(); goCam('geral', true);
 function loop(now){
   requestAnimationFrame(loop);
   const dt = Math.min(0.05, (now - lastT) / 1000); lastT = now;
@@ -817,7 +998,7 @@ function loop(now){
     if (el >= 7) closeGate('TEMPO'); else if (el > 2.5 && d == null) closeGate('PASSAGEM');
   }
   arm += ((S.gateOpen ? 1 : 0) - arm) * Math.min(1, dt * 7); armPivot.rotation.x = -arm * Math.PI / 2;
-  beamMat.opacity = d != null ? 0.26 : 0.06; beamMat.color.set(d != null ? 0x2f9e6a : 0xffffff);
+  beamMat.opacity = d != null ? 0.24 : 0.08; beamMat.color.set(d != null ? 0x1e8a5a : 0x5b8fd9);
   if (now - lastStat > 250) { lastStat = now; renderStat(); }
   pulses = pulses.filter(q => { const p = (now - q.s) / q.ms; if (p >= 1) { q.m.material.opacity = 0; return false; } q.m.scale.setScalar(1 + p * 0.9); q.m.material.opacity = 0.9 * (1 - p); return true; });
   if (camAnim) { const p = Math.min(1, (now - camAnim.s) / 900), e = ease(p); camera.position.lerpVectors(camAnim.p0, camAnim.p1, e); controls.target.lerpVectors(camAnim.t0, camAnim.t1, e); if (p >= 1) camAnim = null; }
@@ -833,6 +1014,42 @@ function loop(now){
 requestAnimationFrame(loop);
 
 }
+}
+</script>
+<script>
+/* tema: escuro é o padrão; a escolha fica salva neste navegador */
+{
+  const root = document.documentElement, tb = document.getElementById('themeBtn'), meta = document.querySelector('meta[name=theme-color]');
+  function sync(){ const dark = root.dataset.theme !== 'light', l = dark ? 'Ativar modo claro' : 'Ativar modo escuro'; tb.setAttribute('aria-label', l); tb.title = l; meta.content = dark ? '#061227' : '#ffffff'; }
+  tb.addEventListener('click', () => {
+    root.classList.add('theming'); root.dataset.theme = root.dataset.theme === 'light' ? 'dark' : 'light';
+    try { localStorage.setItem('smartpark-tema', root.dataset.theme); } catch (e) {}
+    sync(); dispatchEvent(new Event('temachange')); setTimeout(() => root.classList.remove('theming'), 450);
+  });
+  sync();
+}
+/* sumário: aberto no computador, recolhido no celular e no tablet */
+{
+  const d = document.getElementById('tocD'), mq = matchMedia('(max-width:1000px)');
+  const set = () => { d.open = !mq.matches; }; set(); mq.addEventListener('change', set);
+  d.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { if (mq.matches) d.open = false; }));
+}
+/* sumário e menu acompanham a rolagem */
+{
+  const links = [...document.querySelectorAll('.toc a')], nav = [...document.querySelectorAll('.nav a')];
+  const secs = links.map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+  const wiki = document.getElementById('enciclopedia'), tar = document.getElementById('tarifacao');
+  let tick = false;
+  function update(){
+    tick = false; const y = window.scrollY + 120; let cur = null;
+    secs.forEach(s => { if (s.getBoundingClientRect().top + window.scrollY <= y) cur = s; });
+    links.forEach(a => a.classList.toggle('on', !!cur && a.getAttribute('href') === '#' + cur.id));
+    const inWiki = wiki.getBoundingClientRect().top + window.scrollY <= y;
+    const section = !inWiki ? 'simulacao' : cur === tar ? 'tarifacao' : 'enciclopedia';
+    nav.forEach(a => a.setAttribute('aria-current', a.dataset.sec === section));
+  }
+  addEventListener('scroll', () => { if (!tick) { tick = true; requestAnimationFrame(update); } }, {passive:true});
+  update();
 }
 </script>
 </body>

@@ -12,8 +12,14 @@ Mantenha index.html, lib e fonts juntos na mesma pasta.
 
 DICAS PARA A FEIRA
 - Tecla F11 deixa o navegador em tela cheia.
-- Botao vermelho: reproduz o ciclo completo (cerca de 40 s).
-  Botao do meio: avanca um passo por vez, para ir explicando.
+- A pagina abre no modo escuro. O botao com sol/lua, no canto
+  superior direito, troca para o modo claro (e volta). A escolha
+  fica salva no navegador.
+- No celular, o painel do passo atual fica preso no rodape enquanto
+  a cena 3D esta na tela.
+- Botao azul "Reproduzir": reproduz o ciclo completo (cerca de 40 s).
+  Botao "Proximo passo": avanca um passo por vez, para ir explicando.
+  O painel ao lado da cena mostra o passo atual e o estado do sistema.
 - Arraste para girar a cena, use a roda do mouse para zoom e
   clique num componente para ver as ligacoes dele.
 - Se a cena aparecer preta, ative "Usar aceleracao grafica" nas
@@ -23,5 +29,6 @@ CONTEUDO
 index.html          pagina com a simulacao 3D e a enciclopedia
 lib/three.min.js    Three.js r128 (licenca MIT)
 lib/OrbitControls.js controle de camera do Three.js (licenca MIT)
-fonts/              IBM Plex Sans, IBM Plex Sans Condensed, IBM Plex Mono
-                    e Source Serif 4 (licenca SIL Open Font License)
+fonts/              Overpass e Overpass Mono, usadas pela pagina
+                    (licenca SIL Open Font License). Os arquivos IBM Plex
+                    e Source Serif 4 eram da versao anterior e nao sao mais usados.
